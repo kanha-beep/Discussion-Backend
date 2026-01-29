@@ -7,10 +7,13 @@ import { connectDB } from "./init/db.js"
 const app = express();
 app.use(express.json());
 console.log("urls: ", process.env.CORS_ORIGIN)
+const allowedOrigins = process.env.FRONT_END.split(",")
+console.log("urls: ", allowedOrigins)
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true
 }));
+app.set("trust proxy", 1)
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
