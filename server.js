@@ -5,15 +5,15 @@ import http from "http";
 import { Server } from "socket.io";
 import app from "./app.js";
 const server = http.createServer(app);
+const allowedOrigins = process.env.FRONT_END.split(",")
 
+console.log("urls socket: ", allowedOrigins)
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONT_END.split(","),
+    origin: allowedOrigins,
     credentials: true,
   },
 });
-
-
 io.on("connection", (socket) => {
   console.log("socket connected:", socket.id);
   socket.on("join-call", ({ roomId }) => {
