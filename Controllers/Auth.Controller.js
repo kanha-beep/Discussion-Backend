@@ -79,11 +79,12 @@ export const currentUser = async (req, res, next) => {
 };
 export const checkEmail = async (req, res, next) => {
     console.log("email: ", req.body)
-    if (verifyEmail === null) {
-        const newEmail = await User.create({ email });
-        return res.status(200).json({ msg: "Email is valid" });
-    }
     const { email } = req.body;
+    // if (email === null) {
+    //     const newEmail = await User.create({ email });
+    //     return res.status(200).json({ msg: "Email is valid" });
+    // }
+
     if (!email) return next(new ExpressError(400, "Email is required"));
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return next(new ExpressError(401, "Invalid email"));
