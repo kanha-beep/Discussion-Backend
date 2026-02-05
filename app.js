@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser"
 import { connectDB } from "./init/db.js"
 const app = express();
 
-console.log("urls: ", process.env.CORS_ORIGIN)
+console.log("urls: ", process.env.FRONT_END)
 const allowedOrigins = process.env.FRONT_END.split(",")
 console.log("urls: ", allowedOrigins)
 app.use(cors({
