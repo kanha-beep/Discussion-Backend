@@ -3,7 +3,7 @@ import { ExpressError } from './ExpressError.js';
 
 export const VerifyAuth = (req, res, next) => {
     try {
-        const token = req.cookies.cookieToken;
+        const token = req.cookies.token;
 
         if (!token) return next(new ExpressError(401, "No token generated after login in verifyAuth"));
         // console.log("Token: ", token);
