@@ -4,6 +4,8 @@ import { DiscussionForm } from "../Models/Discussion.Models.js"
 import { io } from "../server.js";
 import { Chat } from "../Models/Chat.Model.js"
 import { Message } from "../Models/Message.Schema.js"
+import { Room } from "../Models/Room.Model.js";
+import { RoomMessage } from "../Models/RoomMessage.Model.js";
 export const createDiscussion = async (req, res, next) => {
     console.log("form starts")
     console.log("req discussion: ", req.body)
@@ -138,3 +140,71 @@ export const ChatBot = async (req, res) => {
     console.log("got data in node: " + data?.response)
     res.json({ reply: data.response });
 }
+
+/* create room */
+export const createRoom = async (req, res) => {
+    console.log("getting name of room: ", req.body)
+    const room = await Room.create({
+        name: req.body.name,
+        host: req.user._id,
+        members: [req.user._id],
+        isPrivate: true,
+    });
+    console.log("room created: ", room)
+    res.status(201).json(room);
+};
+
+/* all rooms user is part of */
+export const allRooms = async (req, res) => {
+    const rooms = await Room.find({ members: req.user._id });
+    res.json(rooms);
+};
+
+/* single room */
+export const singleRoom = async (req, res) => {
+    const room = await Room.findById(req.params.roomId)
+        .populate("members", "name email");
+    if (!room) throw new Error("Room not found");
+    res.json(room);
+};
+
+/* join room */
+export const joinRoom = async (req, res) => {
+    const room = await Room.findById(req.params.roomId);
+    if (!room) throw new Error("Room not found");
+
+    if (!room.members.includes(req.user._id)) {
+        room.members.push(req.user._id);
+        await room.save();
+    }
+
+    res.json({ joined: true });
+};
+
+/* leave room */
+export const leaveRoom = async (req, res) => {
+    await Room.findByIdAndUpdate(
+        req.params.roomId,
+        { $pull: { members: req.user._id } }
+    );
+    res.json({ left: true });
+};
+/* get room messages */
+export const getRoomMessages = async (req, res) => {
+    const messages = await RoomMessage.find({
+        room: req.params.roomId,
+    }).populate("sender", "name");
+
+    res.json(messages);
+};
+
+/* send room message */
+export const sendRoomMessage = async (req, res) => {
+    const message = await RoomMessage.create({
+        room: req.params.roomId,
+        sender: req.user._id,
+        text: req.body.text,
+    });
+
+    res.status(201).json(message);
+};

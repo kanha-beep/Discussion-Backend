@@ -37,6 +37,41 @@ io.on("connection", (socket) => {
   socket.on("send-message", (data) => {
     socket.to(data.chatId).emit("receive-message", data);
   });
+  // join meeting room
+  socket.on("join-room", ({ roomId, user }) => {
+    socket.join(roomId)
+    // socket.to(roomId).emit("user-joined", { user, socketId: socket.id })
+    socket.to(roomId).emit("user-joined", { socketId: socket.id });
+  })
+  // WebRTC signaling (multi-user)
+  socket.on("room-offer", ({ roomId, offer, to }) => {
+    socket.to(to).emit("room-offer", { offer, from: socket.id })
+  })
+  socket.on("room-answer", ({ answer, to }) => {
+    socket.to(to).emit("room-answer", { answer, from: socket.id })
+  })
+
+  socket.on("room-ice", ({ candidate, to }) => {
+    socket.to(to).emit("room-ice", { candidate, from: socket.id })
+  })
+
+  // room chat
+  socket.on("room-message", (data) => {
+    // socket.to(data.roomId).emit("room-message", data)
+
+    io.to(data.roomId).emit("room-message", data)
+  })
+
+  socket.on("leave-room", ({ roomId }) => {
+    socket.leave(roomId)
+    socket.to(roomId).emit("user-left", socket.id)
+  })
+  socket.on("disconnecting", () => {
+    for (const room of socket.rooms) {
+      socket.to(room).emit("user-left", socket.id);
+    }
+  });
+
   socket.on("disconnect", () => {
     console.log("socket disconnected:", socket.id);
   });
