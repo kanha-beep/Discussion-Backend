@@ -10,7 +10,9 @@ export const createDiscussion = async (req, res, next) => {
     console.log("form starts")
     console.log("req discussion: ", req.body)
     const { email, keywords, remarks } = req.body;
+    console.log("keywords: ", email, remarks)
     const user = await User.findOne({ email });
+    console.log("user found: ", user)
     if (!user) return next(new ExpressError(401, "User not found"))
     console.log("user: ", user)
     const discussion = await DiscussionForm.create({
