@@ -24,10 +24,10 @@ export const Register = async (req, res, next) => {
     // console.log("User roles before token generation: ", user.roles);
     const token = GenToken(user);
     console.log("Generated token: ", token);
-    return res.cookie("cookieToken", token, {
+    return res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     }).status(201).json({
         msg: "User registered successfully",
         user: {
@@ -53,10 +53,10 @@ export const Login = async (req, res, next) => {
     console.log("User roles before token generation: ", user.roles);
     const token = GenToken(user);
     console.log("Generated token: ", token)
-    return res.cookie("cookieToken", token, {
+    return res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }).status(200).json({
         msg: "User logged in successfully",
