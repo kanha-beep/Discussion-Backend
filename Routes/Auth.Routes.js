@@ -8,5 +8,5 @@ router.post("/check-email", WrapAsync(checkEmail))
 router.post("/register", WrapAsync(Register))
 router.post("/login", WrapAsync(Login))
 router.get("/me", VerifyAuth, WrapAsync(currentUser))
-router.post("/logout", VerifyAuth, WrapAsync(Logout))
+router.post("/logout", WrapAsync(Logout))
 export default router
