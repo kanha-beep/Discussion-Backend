@@ -7,7 +7,7 @@ import { connectDB } from "./init/db.js"
 const app = express();
 
 console.log("urls: ", process.env.FRONT_END)
-const allowedOrigins = process.env.FRONT_END.split(",")
+const allowedOrigins = process.env.FRONT_END.split(",").map(u => u.trim())
 console.log("urls: ", allowedOrigins)
 app.use(cors({
     origin: allowedOrigins,

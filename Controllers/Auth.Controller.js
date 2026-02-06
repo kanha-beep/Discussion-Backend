@@ -68,14 +68,14 @@ export const Login = async (req, res, next) => {
     });
 };
 export const currentUser = async (req, res, next) => {
+    console.log("owner starts")
     const userId = req?.user?._id;
     console.log("user id: ", userId)
     const user = await User.findById(userId).select("-password");
     // console.log("current user: ", user)
     if (!user) return next(new ExpressError(400, "User does not exist"));
-    return res.status(200).json({
-        msg: "User fetched successfully", user
-    });
+    console.log("user logged in: ", user)
+    return res.status(200).json({ msg: "User fetched successfully", user });
 };
 export const checkEmail = async (req, res, next) => {
     console.log("email: ", req.body)
