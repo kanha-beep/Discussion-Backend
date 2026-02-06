@@ -105,12 +105,19 @@ export const checkEmail = async (req, res, next) => {
 
 }
 export const Logout = async (req, res, next) => {
-    res.clearCookie("cookieToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax"
-    })
-    res.status(200).json({
-        msg: "User logged out successfully"
-    });
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax"
+        })
+        res.status(200).json({
+            msg: "User logged out successfully"
+        });
+    } catch (e) {
+        return res.status(500).json({
+            msg: "Logout failed",
+            error: error.message
+        });
+    }
 };
