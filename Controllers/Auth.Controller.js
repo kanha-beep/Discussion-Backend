@@ -28,6 +28,7 @@ export const Register = async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain: ".onrender.com",
     }).status(201).json({
         msg: "User registered successfully",
         user: {
@@ -57,6 +58,7 @@ export const Login = async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        domain: ".onrender.com",
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }).status(200).json({
         msg: "User logged in successfully",
