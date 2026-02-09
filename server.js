@@ -52,16 +52,17 @@ io.on("connection", (socket) => {
     // send count to everyone in room (including sender)
     // io.in(roomId).emit("room-users-count", count, roomId);
     // socket.to(roomId).emit("user-joined", { user, socketId: socket.id })
+    io.to("watch-" + roomId).emit("room-users-count", count, roomId);
     socket.to(roomId).emit("user-joined", { socketId: socket.id });
-    // setTimeout(() => {
-    //   const room = io.sockets.adapter.rooms.get(roomId);
-    //   const count = room ? room.size : 0;
-
-    //   console.log("room:", roomId, "count:", count);
-
-    //   io.to(roomId).emit("room-users-count", count, roomId);
-    // }, 50);
   })
+  // watch room (for homepage count only)
+  socket.on("watch-room", ({ roomId }) => {
+    socket.join("watch-" + roomId);
+
+    const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
+
+    socket.emit("room-users-count", count, roomId);
+  });
   // WebRTC signaling (multi-user)
   socket.on("room-offer", ({ roomId, offer, to }) => {
     socket.to(to).emit("room-offer", { offer, from: socket.id })
@@ -80,7 +81,6 @@ io.on("connection", (socket) => {
 
   // room chat
   socket.on("room-message", (data) => {
-    // socket.to(data.roomId).emit("room-message", data)
 
     io.to(data.roomId).emit("room-message", data)
   })
@@ -90,13 +90,10 @@ io.on("connection", (socket) => {
     const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
 
     io.to(roomId).emit("room-users-count", count, roomId);
+    io.to("watch-" + roomId).emit("room-users-count", count, roomId);
     socket.to(roomId).emit("user-left", socket.id)
   })
-  // socket.on("disconnecting", () => {
-  //   for (const room of socket.rooms) {
-  //     socket.to(room).emit("user-left", socket.id);
-  //   }
-  // });
+
   socket.on("disconnecting", () => {
     socket.rooms.forEach((roomId) => {
       if (roomId === socket.id) return;
@@ -111,17 +108,6 @@ io.on("connection", (socket) => {
       socket.to(roomId).emit("user-left", socket.id);
     });
   });
-
-  // socket.on("disconnect", () => {
-  //   socket.rooms.forEach((roomId) => {
-  //     if (roomId === socket.id) return;
-
-  //     const room = io.sockets.adapter.rooms.get(roomId);
-  //     const count = room ? room.size : 0;
-
-  //     io.to(roomId).emit("room-users-count", count, roomId);
-  //   });
-  // });
 
 });
 
