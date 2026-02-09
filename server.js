@@ -70,7 +70,8 @@ io.on("connection", (socket) => {
       roomHosts.set(roomId, socket.id); // first user = host
       socket.join(roomId);
       socket.emit("host");
-      io.to(socket.id).emit("admitted");
+      socket.emit("admitted");
+      // io.to(socket.id).emit("admitted");
     } else {
       if (!waitingUsers.has(roomId)) waitingUsers.set(roomId, new Set());
       waitingUsers.get(roomId).add(socket.id);
@@ -92,9 +93,16 @@ io.on("connection", (socket) => {
   });
   socket.on("admit-user", ({ roomId, socketId }) => {
     // socket.to(socketId).emit("admitted");
-    io.sockets.sockets.get(socketId)?.join(roomId);
+    // io.sockets.sockets.get(socketId)?.join(roomId);
 
-    io.to(socketId).emit("admitted");
+    // io.to(socketId).emit("admitted");
+    const target = io.sockets.sockets.get(socketId);
+
+    if (!target) return;
+
+    target.join(roomId);
+
+    target.emit("admitted");
     waitingUsers.get(roomId)?.delete(socketId);
     const hostId = roomHosts.get(roomId);
     io.to(hostId).emit(
