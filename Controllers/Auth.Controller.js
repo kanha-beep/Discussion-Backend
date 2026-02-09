@@ -30,6 +30,7 @@ export const Register = async (req, res, next) => {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         // domain: ".onrender.com",
     }).status(201).json({
+        
         msg: "User registered successfully",
         user: {
             id: user._id,
