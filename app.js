@@ -13,8 +13,8 @@ app.use(cors({
     origin: allowedOrigins,
     credentials: true
 }));
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 import AuthRoutes from "./Routes/Auth.Routes.js";
