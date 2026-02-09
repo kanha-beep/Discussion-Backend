@@ -2,7 +2,7 @@ import { ExpressError } from "../Middlewares/ExpressError.js";
 import { GenToken } from "../Middlewares/GenToken.js";
 import { User } from "../Models/User.Models.js";
 import bcrypt from "bcrypt";
-
+const isProd = process.env.NODE_ENV === "production"
 export const Register = async (req, res, next) => {
     console.log(req.body);
     const { email, password, firstName, lastName, profession } = req.body;
@@ -30,7 +30,7 @@ export const Register = async (req, res, next) => {
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         // domain: ".onrender.com",
     }).status(201).json({
-        
+
         msg: "User registered successfully",
         user: {
             id: user._id,
@@ -55,10 +55,11 @@ export const Login = async (req, res, next) => {
     console.log("User roles before token generation: ", user.roles);
     const token = GenToken(user);
     console.log("Generated token: ", token)
+
     return res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
         // domain: ".onrender.com",
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }).status(200).json({
