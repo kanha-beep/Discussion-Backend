@@ -58,7 +58,7 @@ export const Login = async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        domain: ".onrender.com",
+        // domain: ".onrender.com",
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }).status(200).json({
         msg: "User logged in successfully",
@@ -76,7 +76,7 @@ export const currentUser = async (req, res, next) => {
     const user = await User.findById(userId).select("-password");
     // console.log("current user: ", user)
     if (!user) return next(new ExpressError(400, "User does not exist"));
-    console.log("user logged in: ", user)
+    // console.log("user logged in: ", user)
     return res.status(200).json({ msg: "User fetched successfully", user });
 };
 export const checkEmail = async (req, res, next) => {

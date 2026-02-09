@@ -23,6 +23,7 @@ router.post("/chat/:chatId/message", VerifyAuth, chatMessage);
 router.post("/chatbot", ChatBot)
 // rooms
 router.post("/room/new", VerifyAuth, WrapAsync(createRoom))
+// router.post("/:roomId/room", VerifyAuth, WrapAsync(createRoom))
 router.get("/rooms", VerifyAuth, WrapAsync(allRooms))
 router.get("/room/:roomId", VerifyAuth, WrapAsync(singleRoom))
 router.post("/room/:roomId/join", VerifyAuth, WrapAsync(joinRoom))

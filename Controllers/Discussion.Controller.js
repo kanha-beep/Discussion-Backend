@@ -31,7 +31,7 @@ export const allDiscussion = async (req, res, next) => {
     const { search } = req.query;
     const sort = parseInt(req.query.sort) || 1;
     console.log("order: ", req.query)
-    const discussions = await DiscussionForm.find({ keywords: { $regex: new RegExp(search, "i") } }).sort({ createdAt: sort });
+    const discussions = await DiscussionForm.find({ keywords: { $regex: new RegExp(search, "i") } }).sort({ createdAt: sort }).populate("roomId");
     // console.log("discussions: ", discussions)
     if (!discussions) return next(new ExpressError(401, "No discussions found"))
     return res.status(200).json({ discussions });
@@ -66,7 +66,7 @@ export const deleteDiscussion = async (req, res, next) => {
     return res.status(200).json({ discussion });
 }
 export const allUsers = async (req, res, next) => {
-    console.log("all users starts")
+    console.log("got all users of the software in homepage")
     const users = await User.find(
         { _id: { $ne: req.user._id } },
         "_id name email"
@@ -145,54 +145,83 @@ export const ChatBot = async (req, res) => {
 
 /* create room */
 export const createRoom = async (req, res) => {
+    const discussionId = req.body.discussionId;
     console.log("getting name of room: ", req.body)
-    const room = await Room.create({
+    let room = await Room.findById(discussionId);
+    if (room) {
+        console.log("room already exists:", room._id, "room: ", room);
+        return res.status(200).json(room);
+    }
+    room = await Room.create({
         name: req.body.name,
         host: req.user._id,
         members: [req.user._id],
+        discussion: discussionId,
         isPrivate: true,
     });
+    await DiscussionForm.findByIdAndUpdate(
+        discussionId,
+        { roomId: room._id },
+        { new: true }
+    );
     console.log("room created: ", room)
     res.status(201).json(room);
 };
 
 /* all rooms user is part of */
 export const allRooms = async (req, res) => {
-    const rooms = await Room.find({ members: req.user._id });
+    console.log("all rooms: ", req.user._id)
+    const rooms = await Room.find({
+        members: { $in: [req.user._id] }
+    });
     res.json(rooms);
 };
 
 /* single room */
 export const singleRoom = async (req, res) => {
+    console.log("finding single room:", req.params)
     const room = await Room.findById(req.params.roomId)
         .populate("members", "name email");
     if (!room) throw new Error("Room not found");
+    if (!room.members.some(id => id.toString() === req.user._id.toString())) throw new Error("Not authorized");
+
     res.json(room);
 };
 
 /* join room */
 export const joinRoom = async (req, res) => {
+    console.log("joining single room: ", req.params)
     const room = await Room.findById(req.params.roomId);
     if (!room) throw new Error("Room not found");
 
-    if (!room.members.includes(req.user._id)) {
+    if (!room.members.some(id => id.toString() === req.user._id.toString())) {
         room.members.push(req.user._id);
         await room.save();
     }
+
 
     res.json({ joined: true });
 };
 
 /* leave room */
 export const leaveRoom = async (req, res) => {
+    console.log("leaving room: ", req.params)
+    const room = await Room.findById(req.params.roomId);
+
+    if (room.host.toString() === req.user._id.toString()) {
+        throw new Error("Host cannot leave room");
+    }
+
     await Room.findByIdAndUpdate(
         req.params.roomId,
         { $pull: { members: req.user._id } }
     );
+
     res.json({ left: true });
 };
 /* get room messages */
 export const getRoomMessages = async (req, res) => {
+    console.log("get room mesg: ", req.params.roomId)
     const messages = await RoomMessage.find({
         room: req.params.roomId,
     }).populate("sender", "name");

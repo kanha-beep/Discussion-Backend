@@ -18,12 +18,18 @@ export const discussionFormSchema = new mongoose.Schema({
     },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        required: true
     },
     users: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User", default: []
     }],
+    roomId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
+        index: true
+    },
     createdAt: {
         type: Date,
         default: Date.now
