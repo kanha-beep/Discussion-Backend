@@ -5,7 +5,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import { connectDB } from "./init/db.js"
 const app = express();
-
+app.set("trust proxy", 1)
 console.log("urls: ", process.env.FRONT_END)
 const allowedOrigins = process.env.FRONT_END.split(",").map(u => u.trim())
 console.log("urls: ", allowedOrigins)
@@ -14,7 +14,6 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
-app.set("trust proxy", 1)
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
