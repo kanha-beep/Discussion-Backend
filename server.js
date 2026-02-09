@@ -14,6 +14,8 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+const roomHosts = new Map();     // roomId -> hostSocketId
+const waitingUsers = new Map();
 io.on("connection", (socket) => {
   console.log("socket connected:", socket.id);
   socket.on("join-call", ({ roomId }) => {
@@ -44,14 +46,10 @@ io.on("connection", (socket) => {
       console.log("ERROR: roomId is null");
       return;
     }
-    // const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
     const room = io.sockets.adapter.rooms.get(roomId);
     const count = room ? room.size : 0;
     io.to(roomId).emit("room-users-count", count, roomId);
     console.log("count: ", count)
-    // send count to everyone in room (including sender)
-    // io.in(roomId).emit("room-users-count", count, roomId);
-    // socket.to(roomId).emit("user-joined", { user, socketId: socket.id })
     io.to("watch-" + roomId).emit("room-users-count", count, roomId);
     socket.to(roomId).emit("user-joined", { socketId: socket.id });
   })
@@ -67,6 +65,35 @@ io.on("connection", (socket) => {
   socket.on("room-offer", ({ roomId, offer, to }) => {
     socket.to(to).emit("room-offer", { offer, from: socket.id })
   })
+  socket.on("join-room-request", ({ roomId }) => {
+    if (!roomHosts.has(roomId)) {
+      roomHosts.set(roomId, socket.id); // first user = host
+      socket.join(roomId);
+      io.to(socket.id).emit("admitted");
+    } else {
+      if (!waitingUsers.has(roomId)) waitingUsers.set(roomId, new Set());
+      waitingUsers.get(roomId).add(socket.id);
+
+      const hostId = roomHosts.get(roomId);
+      io.to(hostId).emit("join-request", {
+        socketId: socket.id
+      });
+    }
+  });
+  socket.on("admit-user", ({ roomId, socketId }) => {
+    socket.to(socketId).emit("admitted");
+    io.sockets.sockets.get(socketId)?.join(roomId);
+    waitingUsers.get(roomId)?.delete(socketId);
+  });
+
+  socket.on("reject-user", ({ socketId }) => {
+    socket.to(socketId).emit("rejected");
+  });
+  socket.on("kick-user", ({ roomId, socketId }) => {
+    io.sockets.sockets.get(socketId)?.leave(roomId);
+    socket.to(socketId).emit("kicked");
+  });
+
   socket.on("room-answer", ({ answer, to }) => {
     socket.to(to).emit("room-answer", { answer, from: socket.id })
   })
