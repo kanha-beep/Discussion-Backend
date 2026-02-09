@@ -28,7 +28,7 @@ export const Register = async (req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        // domain: ".onrender.com",
+        domain: "discussion-backend-he0c.onrender.com",
     }).status(201).json({
 
         msg: "User registered successfully",
@@ -60,7 +60,7 @@ export const Login = async (req, res, next) => {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? "none" : "lax",
-        // domain: ".onrender.com",
+        domain: "discussion-backend-he0c.onrender.com",
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }).status(200).json({
         msg: "User logged in successfully",
@@ -96,7 +96,7 @@ export const checkEmail = async (req, res, next) => {
     console.log("got email: ", verifyEmail)
     if (verifyEmail === null) {
         const newEmail = await User.create({ email });
-        console.log("user craeted : ", newEmail)
+        console.log("user created : ", newEmail)
         return res.status(200).json({
             msg: "Email is valid"
         });
