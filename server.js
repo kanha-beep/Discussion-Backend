@@ -41,6 +41,13 @@ io.on("connection", (socket) => {
   });
   // join meeting room
   socket.on("join-room", ({ roomId, user }) => {
+    const hostId = roomHosts.get(roomId);
+
+    const isHost = socket.id === hostId;
+
+    const isAllowed = isHost || !waitingUsers.get(roomId)?.has(socket.id);
+
+    if (!isAllowed) return;
     socket.join(roomId)
     if (!roomId) {
       console.log("ERROR: roomId is null");
