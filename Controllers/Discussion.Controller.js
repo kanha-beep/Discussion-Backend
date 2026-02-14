@@ -10,6 +10,7 @@ import axios from "axios";
 import { XMLParser } from "fast-xml-parser";
 export const getNews = async (req, res) => {
     const resp = await axios.get("https://pib.gov.in/rss.aspx");
+    console.log("news response: ", resp.data)
     const parser = new XMLParser();
     const jsonData = parser.parse(resp.data);
     const items = jsonData?.rss?.channel?.item || [];
