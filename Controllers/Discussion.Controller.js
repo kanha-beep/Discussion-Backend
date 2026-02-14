@@ -9,13 +9,32 @@ import { RoomMessage } from "../Models/RoomMessage.Model.js";
 import axios from "axios";
 import { XMLParser } from "fast-xml-parser";
 export const getNews = async (req, res) => {
-    const resp = await axios.get("https://pib.gov.in/rss.aspx");
-    console.log("news response: ", resp.data)
-    const parser = new XMLParser();
-    const jsonData = parser.parse(resp.data);
-    const items = jsonData?.rss?.channel?.item || [];
-    console.log("news items: ", items)
-    res.json(items);
+    try {
+        console.log("STARTED")
+        const resp = await axios.get(
+            "https://feeds.feedburner.com/ndtvnews-top-stories",
+            {
+                responseType: "text",
+                headers: {
+                    "User-Agent": "Mozilla/5.0"
+                }
+            }
+        );
+        if (resp.status !== 200) {
+            console.log("Error fetching news: ", resp.status, resp.statusText)
+            return res.status(500).json({ msg: "Error fetching news" })
+        }
+        // console.log("news response: ", resp)
+        const parser = new XMLParser();
+        const jsonData = parser.parse(resp.data);
+        const items = jsonData?.rss?.channel?.item || [];
+        // console.log("news items: ", items)
+        res.json(items);
+    } catch (err) {
+        console.log("Error in getNews: ", err.message)
+        res.status(500).json({ msg: "Error fetching news" })
+    }
+
 }
 export const createDiscussion = async (req, res, next) => {
     console.log("form starts")

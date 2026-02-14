@@ -5,15 +5,16 @@ import { VerifyAuth } from "../Middlewares/VerifyAuth.js";
 import { isRole } from "../Middlewares/IsRole.js"
 // /api/discussion
 const router = express.Router()
+router.get("/news", WrapAsync(getNews))
 router.post("/new", WrapAsync(createDiscussion))
 //all users of the platform
-router.get("/all-users", VerifyAuth, isRole, WrapAsync(allUsers))
-router.get("/", WrapAsync(allDiscussion))
-router.get("/:id", VerifyAuth, isRole, WrapAsync(singleDiscussion))
+router.get("/all-users",VerifyAuth, WrapAsync(allUsers))
+router.get("/",VerifyAuth, WrapAsync(allDiscussion))
+router.get("/:id",VerifyAuth, WrapAsync(singleDiscussion))
 router.patch("/:id/edit", VerifyAuth, isRole, WrapAsync(editDiscussion))
 router.delete("/:id", VerifyAuth, isRole, WrapAsync(deleteDiscussion))
 //chats
-router.get("/news", WrapAsync(getNews))
+
 //all chats of all users
 router.get("/chats", VerifyAuth, isRole, WrapAsync(allChats))
 //open a single chat
