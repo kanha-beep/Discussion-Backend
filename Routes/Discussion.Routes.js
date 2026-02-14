@@ -1,6 +1,6 @@
 import express from "express"
 import { WrapAsync } from "../Middlewares/WrapAsync.js"
-import { getNews,createDiscussion, allDiscussion, singleDiscussion, openChat, allUsers, editDiscussion, allChats, deleteDiscussion, chatMessage, getMessages, ChatBot, createRoom, allRooms, singleRoom, joinRoom, leaveRoom, getRoomMessages, sendRoomMessage } from "../Controllers/Discussion.Controller.js"
+import { getNews, createDiscussion, allDiscussion, singleDiscussion, openChat, allUsers, editDiscussion, allChats, deleteDiscussion, chatMessage, getMessages, ChatBot, createRoom, allRooms, singleRoom, joinRoom, leaveRoom, getRoomMessages, sendRoomMessage } from "../Controllers/Discussion.Controller.js"
 import { VerifyAuth } from "../Middlewares/VerifyAuth.js";
 import { isRole } from "../Middlewares/IsRole.js"
 // /api/discussion
@@ -13,7 +13,7 @@ router.get("/:id", VerifyAuth, isRole, WrapAsync(singleDiscussion))
 router.patch("/:id/edit", VerifyAuth, isRole, WrapAsync(editDiscussion))
 router.delete("/:id", VerifyAuth, isRole, WrapAsync(deleteDiscussion))
 //chats
-router.get("/news", getNews)
+router.get("/news", WrapAsync(getNews))
 //all chats of all users
 router.get("/chats", VerifyAuth, isRole, WrapAsync(allChats))
 //open a single chat
