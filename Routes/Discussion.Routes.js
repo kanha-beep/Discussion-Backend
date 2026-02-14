@@ -1,6 +1,6 @@
 import express from "express"
 import { WrapAsync } from "../Middlewares/WrapAsync.js"
-import { createDiscussion, allDiscussion, singleDiscussion, openChat, allUsers, editDiscussion, allChats, deleteDiscussion, chatMessage, getMessages, ChatBot, createRoom, allRooms, singleRoom, joinRoom, leaveRoom, getRoomMessages, sendRoomMessage } from "../Controllers/Discussion.Controller.js"
+import { getNews,createDiscussion, allDiscussion, singleDiscussion, openChat, allUsers, editDiscussion, allChats, deleteDiscussion, chatMessage, getMessages, ChatBot, createRoom, allRooms, singleRoom, joinRoom, leaveRoom, getRoomMessages, sendRoomMessage } from "../Controllers/Discussion.Controller.js"
 import { VerifyAuth } from "../Middlewares/VerifyAuth.js";
 import { isRole } from "../Middlewares/IsRole.js"
 // /api/discussion
@@ -13,15 +13,16 @@ router.get("/:id", VerifyAuth, isRole, WrapAsync(singleDiscussion))
 router.patch("/:id/edit", VerifyAuth, isRole, WrapAsync(editDiscussion))
 router.delete("/:id", VerifyAuth, isRole, WrapAsync(deleteDiscussion))
 //chats
+router.get("/news", getNews)
 //all chats of all users
-router.get("/chats", VerifyAuth, isRole, allChats)
+router.get("/chats", VerifyAuth, isRole, WrapAsync(allChats))
 //open a single chat
-router.post("/chat/:userId", VerifyAuth, isRole, openChat);
+router.post("/chat/:userId", VerifyAuth, isRole, WrapAsync(openChat));
 //get messages
-router.get("/chat/:chatId/messages", VerifyAuth, isRole, getMessages);
+router.get("/chat/:chatId/messages", VerifyAuth, isRole, WrapAsync(getMessages));
 //done send message
-router.post("/chat/:chatId/message", VerifyAuth, isRole, chatMessage);
-router.post("/chatbot", isRole, ChatBot)
+router.post("/chat/:chatId/message", VerifyAuth, isRole, WrapAsync(chatMessage));
+router.post("/chatbot", isRole, WrapAsync(ChatBot))
 // rooms
 router.post("/room/new", VerifyAuth, isRole, WrapAsync(createRoom))
 // router.post("/:roomId/room", VerifyAuth, WrapAsync(createRoom))

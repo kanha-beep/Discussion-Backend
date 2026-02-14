@@ -4,8 +4,7 @@ import { ExpressError } from './ExpressError.js';
 export const VerifyAuth = (req, res, next) => {
     try {
         const token = req.cookies.token;
-        console.log("1 token received: ", req.cookies.token, process.env.NODE_ENV)
-        console.log("2 token received: ", req.cookie)
+        console.log("1 token received: ", token, process.env.NODE_ENV)
         if (!token) return next(new ExpressError(401, "No token generated after login in verifyAuth"));
         // console.log("Token: ", token);
         const decoded = jwt.verify(token, process.env.JWT_SECRET || "study_key");

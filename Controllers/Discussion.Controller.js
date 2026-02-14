@@ -6,6 +6,16 @@ import { Chat } from "../Models/Chat.Model.js"
 import { Message } from "../Models/Message.Schema.js"
 import { Room } from "../Models/Room.Model.js";
 import { RoomMessage } from "../Models/RoomMessage.Model.js";
+import axios from "axios";
+import { XMLParser } from "fast-xml-parser";
+export const getNews = async (req, res) => {
+    const resp = await axios.get("https://pib.gov.in/rss.aspx");
+    const parser = new XMLParser();
+    const jsonData = parser.parse(resp.data);
+    const items = jsonData?.rss?.channel?.item || [];
+    console.log("news items: ", items)
+    res.json(items);
+}
 export const createDiscussion = async (req, res, next) => {
     console.log("form starts")
     console.log("req discussion: ", req.body)
