@@ -1,10 +1,11 @@
 import express from "express"
 import { WrapAsync } from "../Middlewares/WrapAsync.js"
-import { getNews, createDiscussion, allDiscussion, singleDiscussion, openChat, allUsers, editDiscussion, allChats, deleteDiscussion, chatMessage, getMessages, ChatBot, createRoom, allRooms, singleRoom, joinRoom, leaveRoom, getRoomMessages, sendRoomMessage } from "../Controllers/Discussion.Controller.js"
+import { getNews, createDiscussion, allDiscussion, singleDiscussion, openChat, allUsers, editDiscussion, allChats, deleteDiscussion, chatMessage, getMessages, ChatBot, createRoom, allRooms, singleRoom, joinRoom, leaveRoom, getRoomMessages, sendRoomMessage, chatAudio } from "../Controllers/Discussion.Controller.js"
 import { VerifyAuth } from "../Middlewares/VerifyAuth.js";
 import { isRole } from "../Middlewares/IsRole.js"
 // /api/discussion
 const router = express.Router()
+router.post("/audio", WrapAsync(chatAudio))
 router.get("/news", WrapAsync(getNews))
 router.post("/new", WrapAsync(createDiscussion))
 //all users of the platform

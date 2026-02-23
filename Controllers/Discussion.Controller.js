@@ -172,7 +172,35 @@ export const ChatBot = async (req, res) => {
     console.log("got data in node: " + data?.response)
     res.json({ reply: data.response });
 }
+export const chatAudio = async (req, res) => {
+    // console.log("chat audio controller: ")
+    if (!req.body || req.body.length === 0) {
+        console.log("No audio received");
+        return res.status(400).json({ msg: "No audio received" });
+    }
+    // console.log("Received audio of length: ", req.body.length)
+    // console.log("Incoming Content-Type:", req.headers["content-type"]);
+    // console.log("Is Buffer:", Buffer.isBuffer(req.body), "len:", req.body.length);
+    // console.log("First 16 bytes:", req.body.slice(0, 16));
+    try {
+        const py = await fetch("http://localhost:8000/audio", {
+            method: "POST",
+            headers: { "Content-Type": "application/octet-stream" },
+            body: req.body,
+        });
+        const data = await py.json();
+        console.log("data received from python", data)
+        res.status(200).json({ reply: data.text });
+    } catch (err) {
+        console.log("Error in chatAudio fetch: ", err.message)
+        return res.status(500).json({ msg: "Error processing audio" })
+    }
 
+    // const data = await py.json();
+    // console.log("got audio in node: " + data?.reply)
+    // console.log("data sending js")
+
+}
 /* create room */
 export const createRoom = async (req, res) => {
     const discussionId = req.body.discussionId;

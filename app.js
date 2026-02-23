@@ -13,6 +13,10 @@ app.use(cors({
     origin: allowedOrigins,
     credentials: true
 }));
+app.use(express.raw({
+  type: "application/octet-stream",
+  limit: "50mb"
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
