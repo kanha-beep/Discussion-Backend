@@ -8,6 +8,7 @@ import { Room } from "../Models/Room.Model.js";
 import { RoomMessage } from "../Models/RoomMessage.Model.js";
 import axios from "axios";
 import { XMLParser } from "fast-xml-parser";
+import { createDiscussionService } from "../services/discussion.service.js";
 export const getNews = async (req, res) => {
     try {
         console.log("STARTED")
@@ -45,15 +46,19 @@ export const createDiscussion = async (req, res, next) => {
     console.log("user found: ", user)
     if (!user) return next(new ExpressError(401, "User not found"))
     console.log("user: ", user)
-    const discussion = await DiscussionForm.create({
-        email: user.email,
-        owner: user._id,
-        users: [user._id],
+    const discussion = await createDiscussionService({
+        email,
         keywords,
         remarks,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        includeBots: !!includeBots
     });
+    // const discussion = await DiscussionForm.create({
+    //     email: user.email,
+    //     owner: user._id,
+    //     users: [user._id],
+    //     keywords,
+    //     remarks,
+    // });
     console.log("discussion: ", discussion)
     return res.status(201).json({ discussion });
 }
@@ -68,7 +73,7 @@ export const allDiscussion = async (req, res, next) => {
 }
 export const singleDiscussion = async (req, res, next) => {
     const { id } = req.params;
-    console.log("single discussion starts")
+    // console.log("single discussion starts")
     const userId = req?.user?._id;
     console.log("edit user: ", userId)
     const discussion = await DiscussionForm.findById(id);

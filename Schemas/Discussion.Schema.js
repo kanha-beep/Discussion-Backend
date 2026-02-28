@@ -23,15 +23,15 @@ export const discussionFormSchema = new mongoose.Schema({
     },
     users: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User", default: []
+        ref: "User"
     }],
     roomId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Room",
         index: true
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    // createdAt: {
+    //     type: Date,
+    //     default: Date.now
+    // }
+}, { timestamps: true })

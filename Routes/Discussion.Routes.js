@@ -9,9 +9,9 @@ router.post("/audio", WrapAsync(chatAudio))
 router.get("/news", WrapAsync(getNews))
 router.post("/new", WrapAsync(createDiscussion))
 //all users of the platform
-router.get("/all-users",VerifyAuth, WrapAsync(allUsers))
-router.get("/",VerifyAuth, WrapAsync(allDiscussion))
-router.get("/:id",VerifyAuth, WrapAsync(singleDiscussion))
+router.get("/all-users", VerifyAuth, WrapAsync(allUsers))
+router.get("/", WrapAsync(allDiscussion))
+router.get("/:id", VerifyAuth, WrapAsync(singleDiscussion))
 router.patch("/:id/edit", VerifyAuth, isRole, WrapAsync(editDiscussion))
 router.delete("/:id", VerifyAuth, isRole, WrapAsync(deleteDiscussion))
 //chats
