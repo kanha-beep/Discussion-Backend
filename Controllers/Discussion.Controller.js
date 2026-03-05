@@ -188,6 +188,7 @@ export const chatAudio = async (req, res) => {
     // console.log("Is Buffer:", Buffer.isBuffer(req.body), "len:", req.body.length);
     // console.log("First 16 bytes:", req.body.slice(0, 16));
     try {
+        console.log("Forwarding audio to Python service...")
         const py = await fetch("http://localhost:8000/audio", {
             method: "POST",
             headers: { "Content-Type": "application/octet-stream" },
