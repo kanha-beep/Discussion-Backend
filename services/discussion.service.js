@@ -2,7 +2,7 @@ import { User } from "../Models/User.Models.js";
 import { ensureBots } from "../bot/ensureBots.js"
 import { DiscussionForm } from "../Models/Discussion.Models.js";
 import { ExpressError } from "../Middlewares/ExpressError.js";
-import { Room } from "../Models/Room.Model.js";
+import { createRoomForDiscussion, startPodcastForRoom } from "./room.service.js";
 export const createDiscussionService = async ({
     email = "Kanha22.Gupta22@Coder.ep",
     keywords,
@@ -27,15 +27,18 @@ export const createDiscussionService = async ({
         keywords: Array.isArray(keywords) ? keywords : [],
         remarks,
     });
-    const room = await Room.create({
+    const room = await createRoomForDiscussion({
+        discussionId: discussion._id,
+        hostId: user._id,
+        members: users,
         name: `Room-${discussion._id}`,
-        host: user._id,
-        members:users,
-        isPrivate: true,
-        discussion: discussion._id,
     });
     discussion.roomId = room._id;
     await discussion.save();
+    await startPodcastForRoom({
+        roomId: room._id,
+        keywords: discussion.keywords,
+    });
     console.log("Discussion created:", discussion);
     return {discussion, room};
 };

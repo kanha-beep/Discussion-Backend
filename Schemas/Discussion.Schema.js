@@ -11,9 +11,13 @@ export const discussionFormSchema = new mongoose.Schema({
     remarks: {
         type: String,
     },
+    summary: {
+        type: String,
+        default: "",
+    },
     status: {
         type: String,
-        enum: ["pending", "approved", "rejected"],
+        enum: ["pending", "approved", "rejected", "ongoing"],
         default: "pending"
     },
     owner: {

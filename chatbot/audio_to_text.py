@@ -1,41 +1,45 @@
-import speech_recognition as sr
-from faster_whisper import WhisperModel
-# def convert_audio_to_text(file_path):
-#     print("1. Converting audio to text...")
-#     recognizer = sr.Recognizer()
-#     print("2. Loading audio file...")
-#     with sr.AudioFile(file_path) as source:
-#         audio = recognizer.record(source)
-#         print("3. Recognizing speech...")
-#     try:
-#         print("4. Recognized text:")
-#         return recognizer.recognize_google(audio)
-#     except:
-#         return ""
-    
+from dotenv import load_dotenv
+load_dotenv()
 
-# Load model once globally (IMPORTANT)
-model = WhisperModel(
-    "small",          # tiny, base, small, medium
-    device="cpu",     # change to "cuda" if GPU
-    compute_type="int8"
-)
+import os
+from openai import OpenAI
+
+client = OpenAI()
+
+BOT_SELF_SPEECH_MARKERS = [
+    "ram:",
+    "krishna:",
+    "krishna moderator",
+    "ram assistant",
+    "i am ram",
+    "i am krishna",
+]
 
 def convert_audio_to_text(file_path):
-    print("1. Converting audio to text using Whisper...")
-
     try:
-        segments, info = model.transcribe(file_path)
-
-        text = ""
-        for segment in segments:
-            text += segment.text
-
-        print("2. Detected language:", info.language)
-        print("3. Recognized text:", text.strip())
-
-        return text.strip()
+        with open(file_path, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="gpt-4o-transcribe",
+                file=audio_file,
+                prompt="The speaker uses Hindi and English only. Output in Devanagari or English letters.",
+                temperature=0
+            )
+        text = transcript.text.strip()
+        # clean common speech fillers
+        text = (
+            text.replace(" uh ", " ")
+                .replace(" um ", " ")
+                .replace(" hmm ", " ")
+                .strip()
+        )
+        if "speaker uses hindi and english" in text.lower():
+            return ""
+        lowered = text.lower()
+        if any(marker in lowered for marker in BOT_SELF_SPEECH_MARKERS):
+            print("Ignoring transcript because it sounds like bot playback:", text)
+            return ""
+        return text
 
     except Exception as e:
-        print("Whisper error:", e)
+        print("OpenAI STT error:", e)
         return ""

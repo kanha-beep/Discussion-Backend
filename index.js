@@ -3,20 +3,20 @@
 import { server } from "./server.js";
 import { startBotDiscussionJob } from "./jobs/startBotDiscussionJob.js";
 import { connectDB } from "./init/db.js";
+import { DiscussionForm } from "./Models/Discussion.Models.js";
 
 const PORT = process.env.PORT || 3000;
 
 // 1️⃣ Connect to DB first
 connectDB()
   .then(() => {
-    console.log("MongoDB connected");
+    // console.log("MongoDB connected");
 
     // 2️⃣ Start bot cron job AFTER DB is ready
-    startBotDiscussionJob();
-
+    // startBotDiscussionJob();
     // 3️⃣ Start server
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      // console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((err) => {

@@ -4,10 +4,12 @@ dotenv.config();
 import http from "http";
 import { Server } from "socket.io";
 import app from "./app.js";
+import { Room } from "./Models/Room.Model.js";
+import { DiscussionForm } from "./Models/Discussion.Models.js";
 const server = http.createServer(app);
 const allowedOrigins = process.env.FRONT_END.split(",")
 
-console.log("urls socket: ", allowedOrigins)
+// console.log("urls socket: ", allowedOrigins)
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -16,7 +18,47 @@ const io = new Server(server, {
 });
 const roomHosts = new Map();
 const waitingUsers = new Map();
+
+const syncDiscussionStatusForRoom = async (roomId, count) => {
+  if (!roomId || String(roomId).startsWith("watch-")) return;
+
+  try {
+    const room = await Room.findById(roomId).select("discussion");
+    if (!room?.discussion) return;
+
+    await DiscussionForm.findByIdAndUpdate(room.discussion, {
+      status: count > 0 ? "ongoing" : "pending",
+    });
+  } catch (error) {
+    console.log("error syncing discussion status:", error?.message);
+  }
+};
+
+const getPersistedRoom = async (roomId) => {
+  try {
+    if (!roomId || String(roomId).startsWith("watch-")) return null;
+    return await Room.findById(roomId).select("isPrivate maxParticipants");
+  } catch (error) {
+    console.log("error fetching room for privacy rules:", error?.message);
+    return null;
+  }
+};
+
 io.on("connection", (socket) => {
+  socket.on("register-user", ({ userId }) => {
+    if (!userId) return;
+    socket.join(`user:${userId}`);
+  });
+
+  socket.on("bot-voice", ({ roomId, bot, text, audio_url }) => {
+    console.log("4. Bot voice emitting to frontend:", bot, audio_url)
+    // send to everyone in video room
+    io.to(roomId).emit("bot-voice", {
+      bot,
+      text,
+      audio_url
+    })
+  })
   console.log("socket connected:", socket.id);
   socket.on("join-call", ({ roomId }) => {
     socket.join(roomId);
@@ -53,12 +95,27 @@ io.on("connection", (socket) => {
       console.log("ERROR: roomId is null");
       return;
     }
-    const room = io.sockets.adapter.rooms.get(roomId);
-    const count = room ? room.size : 0;
-    io.to(roomId).emit("room-users-count", count, roomId);
-    console.log("count: ", count)
-    io.to("watch-" + roomId).emit("room-users-count", count, roomId);
-    socket.to(roomId).emit("user-joined", { socketId: socket.id });
+    getPersistedRoom(roomId).then((persistedRoom) => {
+      const room = io.sockets.adapter.rooms.get(roomId);
+      const count = room ? room.size : 0;
+      if (
+        persistedRoom?.isPrivate &&
+        count > (persistedRoom?.maxParticipants || 4)
+      ) {
+        socket.leave(roomId);
+        io.to(socket.id).emit("room-full", {
+          roomId,
+          message: "Private room is full. Maximum 4 participants allowed.",
+        });
+        return;
+      }
+      io.to(roomId).emit("room-users-count", count, roomId);
+      syncDiscussionStatusForRoom(roomId, count);
+      console.log("count: ", count)
+      console.log("JOINED:", roomId);
+      io.to("watch-" + roomId).emit("room-users-count", count, roomId);
+      socket.to(roomId).emit("user-joined", { socketId: socket.id });
+    });
   })
   // watch room (for homepage count only)
   socket.on("watch-room", ({ roomId }) => {
@@ -80,22 +137,34 @@ io.on("connection", (socket) => {
       socket.emit("admitted");
       // io.to(socket.id).emit("admitted");
     } else {
-      if (!waitingUsers.has(roomId)) waitingUsers.set(roomId, new Set());
-      waitingUsers.get(roomId).add(socket.id);
+      getPersistedRoom(roomId).then((persistedRoom) => {
+        const activeCount = io.sockets.adapter.rooms.get(roomId)?.size || 0;
+        if (
+          persistedRoom?.isPrivate &&
+          activeCount >= (persistedRoom?.maxParticipants || 4)
+        ) {
+          io.to(socket.id).emit("room-full", {
+            roomId,
+            message: "Private room is full. Maximum 4 participants allowed.",
+          });
+          return;
+        }
+        if (!waitingUsers.has(roomId)) waitingUsers.set(roomId, new Set());
+        waitingUsers.get(roomId).add(socket.id);
 
-      const hostId = roomHosts.get(roomId);
-      io.to(hostId).emit("join-request", {
-        socketId: socket.id,
-        name: socket.id
+        const hostId = roomHosts.get(roomId);
+        io.to(hostId).emit("join-request", {
+          socketId: socket.id,
+          name: socket.id
+        });
+        io.to(hostId).emit(
+          "waiting-users",
+          [...waitingUsers.get(roomId)].map(id => ({
+            socketId: id,
+            name: id
+          }))
+        );
       });
-      // send full waiting list
-      io.to(hostId).emit(
-        "waiting-users",
-        [...waitingUsers.get(roomId)].map(id => ({
-          socketId: id,
-          name: id
-        }))
-      );
     }
   });
   socket.on("admit-user", ({ roomId, socketId }) => {
@@ -107,18 +176,41 @@ io.on("connection", (socket) => {
 
     if (!target) return;
 
-    target.join(roomId);
+    getPersistedRoom(roomId).then((persistedRoom) => {
+      const activeCount = io.sockets.adapter.rooms.get(roomId)?.size || 0;
+      if (
+        persistedRoom?.isPrivate &&
+        activeCount >= (persistedRoom?.maxParticipants || 4)
+      ) {
+        target.emit("room-full", {
+          roomId,
+          message: "Private room is full. Maximum 4 participants allowed.",
+        });
+        waitingUsers.get(roomId)?.delete(socketId);
+        const hostId = roomHosts.get(roomId);
+        io.to(hostId).emit(
+          "waiting-users",
+          [...waitingUsers.get(roomId) || []].map(id => ({
+            socketId: id,
+            name: id
+          }))
+        );
+        return;
+      }
 
-    target.emit("admitted");
-    waitingUsers.get(roomId)?.delete(socketId);
-    const hostId = roomHosts.get(roomId);
-    io.to(hostId).emit(
-      "waiting-users",
-      [...waitingUsers.get(roomId) || []].map(id => ({
-        socketId: id,
-        name: id
-      }))
-    );
+      target.join(roomId);
+
+      target.emit("admitted");
+      waitingUsers.get(roomId)?.delete(socketId);
+      const hostId = roomHosts.get(roomId);
+      io.to(hostId).emit(
+        "waiting-users",
+        [...waitingUsers.get(roomId) || []].map(id => ({
+          socketId: id,
+          name: id
+        }))
+      );
+    });
   });
 
   socket.on("reject-user", ({ socketId }) => {
@@ -140,6 +232,7 @@ io.on("connection", (socket) => {
     const count = io.sockets.adapter.rooms.get(roomId)?.size || 0;
 
     io.to(roomId).emit("room-users-count", count, roomId);
+    syncDiscussionStatusForRoom(roomId, count);
     // socket.to(socketId).emit("kicked");
   });
 
@@ -167,6 +260,7 @@ io.on("connection", (socket) => {
 
     io.to(roomId).emit("room-users-count", count, roomId);
     io.to("watch-" + roomId).emit("room-users-count", count, roomId);
+    syncDiscussionStatusForRoom(roomId, count);
     socket.to(roomId).emit("user-left", socket.id)
   })
 
@@ -192,6 +286,7 @@ io.on("connection", (socket) => {
       console.log("leave count:", count);
 
       io.in(roomId).emit("room-users-count", count, roomId);
+      syncDiscussionStatusForRoom(roomId, count);
 
       socket.to(roomId).emit("user-left", socket.id);
     });
