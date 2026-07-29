@@ -1,0 +1,153 @@
+import { ExpressError } from "../Middlewares/ExpressError.js";
+import { GenToken } from "../Middlewares/GenToken.js";
+import { User } from "../Models/User.Models.js";
+import bcrypt from "bcrypt";
+const isProd = process.env.NODE_ENV === "production"
+
+const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
+
+const escapeRegex = (value = "") =>
+    String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const findUserByEmail = (email) => {
+    const normalizedEmail = normalizeEmail(email);
+    return User.findOne({
+        email: { $regex: new RegExp(`^${escapeRegex(normalizedEmail)}$`, "i") },
+    });
+};
+
+export const Register = async (req, res, next) => {
+    console.log(req.body);
+    const normalizedEmail = normalizeEmail(req.body?.email);
+    const { password, firstName, lastName, profession } = req.body;
+    if (!normalizedEmail || !password) return next(new ExpressError(400, "Email and password are required"));
+    // console.log("email: ", email);
+    // if (email === "kanhashree2223@gmail.com") return res.status(404).json({ msg: "Hello Owner", name: "kanha", roles: "admin" });
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    let user = await findUserByEmail(normalizedEmail);
+    console.log(user);
+    if (user && user.password) return next(new ExpressError(400, "User already exists"));
+
+    if (!user) {
+        user = new User({ email: normalizedEmail });
+    }
+
+    user.email = normalizedEmail;
+    user.firstName = firstName,
+        user.lastName = lastName,
+        user.profession = profession,
+        user.password = hashedPassword,
+        user.roles = "user"
+    await user.save()
+    // console.log("new user registered: ", user)
+    // console.log("User roles before token generation: ", user.roles);
+    const token = GenToken(user);
+    console.log("Generated token: ", token);
+    return res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        // domain: "discussion-backend-he0c.onrender.com",
+    }).status(201).json({
+
+        msg: "User registered successfully",
+        user: {
+            id: user._id,
+            email: user.email,
+            roles: user.roles
+        }
+    });
+};
+
+export const Login = async (req, res, next) => {
+    console.log("login starts")
+    const email = normalizeEmail(req.body?.email);
+    const { password } = req.body;
+    console.log(req.body);
+    if (!email || !password) return next(new ExpressError(400, "Email and password are required"));
+    console.log("find admin")
+    console.log("admin not here so create user")
+    const user = await findUserByEmail(email);
+    console.log("user: ", user)
+    if (!user) return next(new ExpressError(401, "User does not exist"));
+
+    if (!user.password) {
+        return next(new ExpressError(401, "Please complete registration before logging in"));
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return next(new ExpressError(402, "Invalid credentials"));
+    console.log("User roles before token generation: ", user.roles);
+    const token = GenToken(user);
+    console.log("Generated token: ", token)
+
+    return res.cookie("token", token, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? "none" : "lax",
+        // domain: "discussion-backend-he0c.onrender.com",
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    }).status(200).json({
+        msg: "User logged in successfully",
+        user: {
+            id: user._id,
+            email: user.email,
+            roles: user.roles
+        }
+    });
+};
+export const currentUser = async (req, res, next) => {
+    console.log("owner starts")
+    const userId = req?.user?._id;
+    console.log("user id: ", userId)
+    const user = await User.findById(userId).select("-password");
+    // console.log("current user: ", user)
+    if (!user) return next(new ExpressError(400, "User does not exist"));
+    // console.log("user logged in: ", user)
+    return res.status(200).json({ msg: "User fetched successfully", user });
+};
+export const checkEmail = async (req, res, next) => {
+    console.log("email: ", req.body)
+    const email = normalizeEmail(req.body?.email);
+    // if (email === null) {
+    //     const newEmail = await User.create({ email });
+    //     return res.status(200).json({ msg: "Email is valid" });
+    // }
+
+    if (!email) return next(new ExpressError(400, "Email is required"));
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return next(new ExpressError(401, "Invalid email"));
+    const verifyEmail = await findUserByEmail(email);
+    console.log("got email: ", verifyEmail)
+    if (verifyEmail === null) {
+        const newEmail = await User.create({ email });
+        console.log("user created : ", newEmail)
+        return res.status(200).json({
+            msg: "Email is valid"
+        });
+    }
+    if (verifyEmail) return next(new ExpressError(402, "Email already exists"));
+    console.log("verify email: ", verifyEmail);
+    return res.status(200).json({
+        msg: "Email is valid"
+    });
+
+}
+export const Logout = async (req, res, next) => {
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax"
+        })
+        res.status(200).json({
+            msg: "User logged out successfully"
+        });
+    } catch (e) {
+        return res.status(500).json({
+            msg: "Logout failed",
+            error: error.message
+        });
+    }
+};
